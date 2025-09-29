@@ -7,8 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spf13/cobra"
 	"dailylog/internal/storage"
+
+	"github.com/spf13/cobra"
 )
 
 // standupCmd represents the standup command
@@ -101,12 +102,12 @@ func generateStandupReport(yesterdayEntries, todayEntries []storage.DailyLogEntr
 
 func generateSlackYAMLReport(yesterdayEntries, todayEntries []storage.DailyLogEntry, date time.Time) string {
 	var report strings.Builder
-	
+
 	yesterday := date.AddDate(0, 0, -1)
-	
+
 	report.WriteString(fmt.Sprintf("Standup Report - %s\n", date.Format("2006-01-02")))
 	report.WriteString("```yaml\n")
-	
+
 	// Yesterday's work
 	report.WriteString(fmt.Sprintf("Y: # Yesterday (%s)\n", yesterday.Format("Jan 2")))
 	if len(yesterdayEntries) == 0 {
@@ -122,9 +123,9 @@ func generateSlackYAMLReport(yesterdayEntries, todayEntries []storage.DailyLogEn
 			}
 		}
 	}
-	
+
 	report.WriteString("\n")
-	
+
 	// Today's plan
 	report.WriteString(fmt.Sprintf("T: # Today (%s)\n", date.Format("Jan 2")))
 	todayPlanned := filterPlannedEntries(todayEntries)
@@ -139,38 +140,38 @@ func generateSlackYAMLReport(yesterdayEntries, todayEntries []storage.DailyLogEn
 			report.WriteString(fmt.Sprintf("  - %s%s\n", entry.Title, priority))
 		}
 	}
-	
+
 	report.WriteString("```")
-	
+
 	return report.String()
 }
 
 func generateJSONReport(yesterdayEntries, todayEntries []storage.DailyLogEntry, date time.Time) string {
 	yesterday := date.AddDate(0, 0, -1)
-	
+
 	report := map[string]interface{}{
 		"date": date.Format("2006-01-02"),
 		"yesterday": map[string]interface{}{
-			"date": yesterday.Format("2006-01-02"),
+			"date":       yesterday.Format("2006-01-02"),
 			"activities": filterActivities(yesterdayEntries),
 		},
 		"today": map[string]interface{}{
-			"date": date.Format("2006-01-02"),
+			"date":    date.Format("2006-01-02"),
 			"planned": filterPlannedEntries(todayEntries),
 		},
 	}
-	
+
 	return formatJSON(report)
 }
 
 func generateDefaultReport(yesterdayEntries, todayEntries []storage.DailyLogEntry, date time.Time) string {
 	var report strings.Builder
 	yesterday := date.AddDate(0, 0, -1)
-	
+
 	report.WriteString(fmt.Sprintf("Standup Report - %s\n", date.Format("2006-01-02")))
 	report.WriteString(strings.Repeat("=", 40))
 	report.WriteString("\n\n")
-	
+
 	// Yesterday
 	report.WriteString(fmt.Sprintf("Yesterday (%s):\n", yesterday.Format("Jan 2")))
 	if len(yesterdayEntries) == 0 {
@@ -182,9 +183,9 @@ func generateDefaultReport(yesterdayEntries, todayEntries []storage.DailyLogEntr
 			}
 		}
 	}
-	
+
 	report.WriteString("\n")
-	
+
 	// Today
 	report.WriteString(fmt.Sprintf("Today (%s):\n", date.Format("Jan 2")))
 	todayPlanned := filterPlannedEntries(todayEntries)
@@ -195,7 +196,7 @@ func generateDefaultReport(yesterdayEntries, todayEntries []storage.DailyLogEntr
 			report.WriteString(fmt.Sprintf("  • %s\n", entry.Title))
 		}
 	}
-	
+
 	return report.String()
 }
 
