@@ -208,7 +208,7 @@ func (g *GitHubStorageProvider) CreateEntry(req storage.CreateLogEntryRequest) (
 	// Create new entry with ID
 	entry := storage.DailyLogEntry{
 		ID:          g.generateEntryID(),
-		Timestamp:   time.Now(),
+		Timestamp:   req.Date,
 		Type:        req.Type,
 		Title:       req.Title,
 		Description: req.Description,
