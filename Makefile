@@ -528,3 +528,11 @@ version.bump-minor:
 
 version.bump-major:
 	@./hack/version bump major
+demo.record:
+	@echo "[DEMO] Recording DailyLog MCP demo with svg-term-cli..."
+	@./hack/record-demo.sh
+
+demo.clean:
+	@echo "[CLEAN] Removing demo recordings..."
+	@rm -f docs/dailylog-demo.cast* docs/dailylog-demo.svg
+	@echo "[SUCCESS] Demo recordings cleaned"
