@@ -1,0 +1,25 @@
+# DailyLog MCP
+build/
+*.log
+*.tmp
+*.temp
+coverage.out
+coverage.html
+.DS_Store
+
+# Go
+go.sum
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Config files with secrets
+config.yaml
+.env
+.env.local
+
+# Test data
+test-data/
