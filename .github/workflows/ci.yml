@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: [1.24.x]
+        go-version: ['1.24']
     
     steps:
     - name: Checkout code
@@ -54,7 +54,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: 1.24.x
+        go-version: '1.24'
         
     - name: Run golangci-lint
       uses: golangci/golangci-lint-action@v3
@@ -73,7 +73,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: 1.24.x
+        go-version: '1.24'
         
     - name: Build MCP server
       run: |
@@ -99,8 +99,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24'
+        
     - name: Run Gosec Security Scanner
-      uses: securecodewarrior/github-action-gosec@master
+      uses: securego/gosec@master
       with:
         args: './...'
 
