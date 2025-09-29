@@ -78,6 +78,11 @@ func initConfig() {
 	viper.SetEnvPrefix("DAILYLOG")
 	viper.AutomaticEnv()
 
+	// Explicit environment variable bindings (viper doesn't auto-map dots to underscores)
+	viper.BindEnv("github.repo", "DAILYLOG_GITHUB_REPO")
+	viper.BindEnv("github.token", "DAILYLOG_GITHUB_TOKEN")
+	viper.BindEnv("github.path", "DAILYLOG_GITHUB_PATH")
+
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil && viper.GetBool("verbose") {
 		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
