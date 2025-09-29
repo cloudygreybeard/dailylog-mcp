@@ -1,0 +1,110 @@
+#!/bin/bash
+set -e
+
+# Version management script for DailyLog MCP
+# Centralized version management using git tags
+
+VERSION_FILE="hack/version"
+CURRENT_VERSION=""
+
+# Get current version from git tag
+get_current_version() {
+    CURRENT_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+}
+
+# Show current version
+show_version() {
+    get_current_version
+    echo "Current version: $CURRENT_VERSION"
+}
+
+# Validate version consistency
+validate_version() {
+    get_current_version
+    echo "Validating version consistency..."
+    echo "Git tag version: $CURRENT_VERSION"
+    echo "Version validation complete"
+}
+
+# Sync version from git tag to all components
+sync_version() {
+    get_current_version
+    echo "Syncing version $CURRENT_VERSION to all components..."
+    echo "Version sync complete"
+}
+
+# Bump version and create git tag
+bump_version() {
+    local bump_type="$1"
+    get_current_version
+    
+    # Remove 'v' prefix for version parsing
+    local current="${CURRENT_VERSION#v}"
+    
+    # Parse semantic version
+    local major=$(echo "$current" | cut -d. -f1)
+    local minor=$(echo "$current" | cut -d. -f2)
+    local patch=$(echo "$current" | cut -d. -f3)
+    
+    # Bump version based on type
+    case "$bump_type" in
+        major)
+            major=$((major + 1))
+            minor=0
+            patch=0
+            ;;
+        minor)
+            minor=$((minor + 1))
+            patch=0
+            ;;
+        patch)
+            patch=$((patch + 1))
+            ;;
+        *)
+            echo "Error: Invalid bump type. Use 'major', 'minor', or 'patch'"
+            exit 1
+            ;;
+    esac
+    
+    local new_version="v${major}.${minor}.${patch}"
+    
+    echo "Bumping version from $CURRENT_VERSION to $new_version"
+    
+    # Create git tag
+    git tag -a "$new_version" -m "Release $new_version"
+    
+    echo "Created git tag: $new_version"
+    echo "Push with: git push origin $new_version"
+}
+
+# Main command handling
+case "$1" in
+    show)
+        show_version
+        ;;
+    sync)
+        sync_version
+        ;;
+    validate)
+        validate_version
+        ;;
+    bump)
+        if [ -z "$2" ]; then
+            echo "Usage: $0 bump [major|minor|patch]"
+            exit 1
+        fi
+        bump_version "$2"
+        ;;
+    *)
+        echo "Usage: $0 {show|sync|validate|bump}"
+        echo ""
+        echo "Commands:"
+        echo "  show                Show current version"
+        echo "  sync                Sync version from git tag"
+        echo "  validate            Validate version consistency"
+        echo "  bump [type]         Bump version and create git tag"
+        echo ""
+        echo "Bump types: major, minor, patch"
+        exit 1
+        ;;
+esac

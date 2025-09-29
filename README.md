@@ -6,7 +6,7 @@ A Model Context Protocol (MCP) server implementation for daily activity logging 
 
 DailyLog MCP provides daily activity logging through MCP integration in AI assistants and command-line tools. Activities, moods, notes, and summaries are stored in private GitHub repositories using structured JSON format.
 
-**Status**: Functional implementation with build automation.
+**Status**: Functional MCP server with automated setup and configuration tools.
 
 ## Features
 
@@ -83,8 +83,7 @@ sudo mv dailylog dailyctl /usr/local/bin/
 ```bash
 git clone https://github.com/cloudygreybeard/dailylog-mcp.git
 cd dailylog-mcp
-make build
-make install
+make setup.complete  # Complete setup with environment and MCP configuration
 ```
 
 ### Setup
@@ -256,14 +255,23 @@ dailylog-mcp/
 ### Available Make Targets
 
 ```bash
-make help           # Show all available commands
-make setup          # Initialize development environment
-make build          # Build all components
-make test           # Run tests
-make clean          # Clean build artifacts
-make install        # Install binaries locally
-make release        # Create release with GoReleaser
-make info.status    # Show project status
+# Setup and Configuration
+make setup.complete    # Complete setup workflow (env + repo + config)
+make setup.env         # Set up environment variables
+make setup.github-repo # Create backing store GitHub repository
+make config.cursor     # Configure MCP server for Cursor IDE
+make config.vscode     # Configure MCP server for VS Code
+
+# Build and Install  
+make build             # Build all components for current platform
+make build.ci          # Build for all platforms (CI-style via GoReleaser)
+make install           # Install binaries locally
+make clean             # Clean build artifacts
+
+# Validation and Status
+make validate.config   # Validate current configuration
+make validate.github   # Test GitHub repository connectivity
+make info.status       # Show project status
 ```
 
 ## Contributing
