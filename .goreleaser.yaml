@@ -1,0 +1,205 @@
+# GoReleaser configuration for DailyLog MCP
+# https://goreleaser.com
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  # MCP Server
+  - id: mcp-server
+    main: ./cmd/mcp-server
+    binary: dailylog
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+    tags:
+      - netgo
+
+  # CLI Tool
+  - id: dailyctl
+    main: ./cmd/dailyctl
+    binary: dailyctl
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+    tags:
+      - netgo
+
+archives:
+  - id: default
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    builds:
+      - mcp-server
+      - dailyctl
+    files:
+      - README.md
+      - LICENSE
+      - docs/**/*
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^test:"
+      - "^chore:"
+      - "^docs:"
+      - Merge pull request
+      - Merge branch
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: "Bug fixes"
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: "Enhancements"
+      regexp: "^.*enhancement[(\\w)]*:+.*$"
+      order: 2
+    - title: Others
+      order: 999
+
+# Release configuration
+release:
+  github:
+    owner: cloudygreybeard
+    name: dailylog-mcp
+  name_template: "{{.ProjectName}} v{{.Version}}"
+  draft: false
+  prerelease: auto
+  mode: replace
+
+# Homebrew tap (optional)
+brews:
+  - name: dailylog
+    repository:
+      owner: cloudygreybeard
+      name: homebrew-tap
+    folder: Formula
+    homepage: https://github.com/cloudygreybeard/dailylog-mcp
+    description: "Daily activity logging with GitHub storage and MCP integration"
+    license: Apache-2.0
+    test: |
+      system "#{bin}/dailylog --version"
+      system "#{bin}/dailyctl version"
+    install: |
+      bin.install "dailylog"
+      bin.install "dailyctl"
+
+# Windows Chocolatey (optional)
+chocolateys:
+  - name: dailylog
+    title: DailyLog MCP
+    authors: Your Name
+    project_url: https://github.com/cloudygreybeard/dailylog-mcp
+    description: "Daily activity logging with GitHub storage and MCP integration"
+    summary: "Command-line daily logging tools with Model Context Protocol server"
+    tags: "daily-log mcp logging productivity"
+    license_url: https://github.com/cloudygreybeard/dailylog-mcp/blob/main/LICENSE
+    require_license_acceptance: false
+    project_source_url: https://github.com/cloudygreybeard/dailylog-mcp
+    docs_url: https://github.com/cloudygreybeard/dailylog-mcp/blob/main/README.md
+    bug_tracker_url: https://github.com/cloudygreybeard/dailylog-mcp/issues
+    icon_url: https://raw.githubusercontent.com/cloudygreybeard/dailylog-mcp/main/icon.png
+
+# Docker images (optional)
+dockers:
+  - image_templates:
+      - "ghcr.io/cloudygreybeard/dailylog:latest"
+      - "ghcr.io/cloudygreybeard/dailylog:{{ .Tag }}"
+      - "ghcr.io/cloudygreybeard/dailylog:v{{ .Major }}"
+    dockerfile: Dockerfile
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.name={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.source={{.GitURL}}"
+      - "--platform=linux/amd64"
+
+# Announce (optional)
+announces:
+  - provider: "github"
+    title: "DailyLog v{{ .Tag }} is out!"
+    body: |
+      ## What's new
+      
+      {{ range .CommitGroups -}}
+      ### {{ .Title }}
+      {{ range .Commits }}
+      - {{ .Message }}
+      {{- end }}
+      {{ end -}}
+      
+      ## Download
+      
+      You can download this release from the [releases page]({{ .ReleaseURL }}).
+      
+      ## Installation
+      
+      ### Homebrew (macOS/Linux)
+      ```bash
+      brew install cloudygreybeard/tap/dailylog
+      ```
+      
+      ### Manual Installation
+      Download the appropriate archive for your platform from the releases page and extract the binaries.
+      
+      ### Configuration
+      Set up your GitHub repository and token:
+      ```bash
+      export DAILYLOG_GITHUB_REPO="cloudygreybeard/daily-logs"
+      export DAILYLOG_GITHUB_TOKEN="your_token_here"
+      ```
+
+# Validation
+project_name: dailylog-mcp
+
+# Git configuration
+git:
+  tag_sort: -version:refname
+
+# Environment variables
+env:
+  - CGO_ENABLED=0

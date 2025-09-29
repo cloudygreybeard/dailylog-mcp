@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "dailylog": {
+      "command": "dailylog",
+      "args": [],
+      "env": {
+        "DAILYLOG_GITHUB_REPO": "cloudygreybeard/daily-logs",
+        "DAILYLOG_GITHUB_TOKEN": "ghp_your_github_token_here",
+        "DAILYLOG_GITHUB_PATH": "logs"
+      }
+    }
+  }
+}
