@@ -17,8 +17,9 @@ import (
 // Version information (set by build)
 var (
 	version = "dev"
-	commit  = "unknown"
-	date    = "unknown"
+	// Note: commit and date variables are set by build but not used in current implementation
+	_ = "unknown" // commit placeholder
+	_ = "unknown" // date placeholder
 )
 
 // Server holds our daily log implementation

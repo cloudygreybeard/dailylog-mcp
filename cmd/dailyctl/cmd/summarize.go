@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"dailylog/internal/storage"
 )
@@ -151,8 +153,9 @@ func runSummarize(summaryType string) func(cmd *cobra.Command, args []string) er
 }
 
 func outputSummary(summary *storage.SummaryResponse) error {
+	c := cases.Title(language.English)
 	fmt.Printf("📊 %s Summary - %s\n",
-		strings.Title(summary.Type), summary.Period)
+		c.String(summary.Type), summary.Period)
 	fmt.Println(strings.Repeat("=", 50))
 	fmt.Println()
 

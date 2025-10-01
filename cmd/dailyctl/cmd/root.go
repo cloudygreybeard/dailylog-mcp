@@ -50,11 +50,11 @@ func init() {
 	rootCmd.PersistentFlags().Bool("verbose", false, "Enable verbose output")
 
 	// Bind flags to viper
-	viper.BindPFlag("github.repo", rootCmd.PersistentFlags().Lookup("github-repo"))
-	viper.BindPFlag("github.token", rootCmd.PersistentFlags().Lookup("github-token"))
-	viper.BindPFlag("github.path", rootCmd.PersistentFlags().Lookup("github-path"))
-	viper.BindPFlag("output.format", rootCmd.PersistentFlags().Lookup("output"))
-	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
+	_ = viper.BindPFlag("github.repo", rootCmd.PersistentFlags().Lookup("github-repo"))
+	_ = viper.BindPFlag("github.token", rootCmd.PersistentFlags().Lookup("github-token"))
+	_ = viper.BindPFlag("github.path", rootCmd.PersistentFlags().Lookup("github-path"))
+	_ = viper.BindPFlag("output.format", rootCmd.PersistentFlags().Lookup("output"))
+	_ = viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -79,9 +79,9 @@ func initConfig() {
 	viper.AutomaticEnv()
 
 	// Explicit environment variable bindings (viper doesn't auto-map dots to underscores)
-	viper.BindEnv("github.repo", "DAILYLOG_GITHUB_REPO")
-	viper.BindEnv("github.token", "DAILYLOG_GITHUB_TOKEN")
-	viper.BindEnv("github.path", "DAILYLOG_GITHUB_PATH")
+	_ = viper.BindEnv("github.repo", "DAILYLOG_GITHUB_REPO")
+	_ = viper.BindEnv("github.token", "DAILYLOG_GITHUB_TOKEN")
+	_ = viper.BindEnv("github.path", "DAILYLOG_GITHUB_PATH")
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil && viper.GetBool("verbose") {

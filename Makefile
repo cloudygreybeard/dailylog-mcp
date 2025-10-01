@@ -1,7 +1,7 @@
 # DailyLog MCP - Development Automation
 # Model Context Protocol server for daily activity logging
 
-.PHONY: help setup build test clean install uninstall dev.iterate dev.clean-iterate info.status version.sync version.validate version.bump-patch version.bump-minor version.bump-major config.cursor config.vscode config.show setup.env setup.github-repo setup.complete validate.config validate.github build.cli install.cli build.ci
+.PHONY: help setup build test clean install uninstall dev.iterate dev.clean-iterate info.status version.sync version.validate version.bump-patch version.bump-minor version.bump-major config.cursor config.vscode config.show setup.env setup.github-repo setup.complete validate.config validate.github build.cli install.cli ci ci.build ci.setup ci.test ci.lint ci.full ci.shell ci.clean
 
 # Default target
 help:
@@ -13,7 +13,6 @@ help:
 	@echo "  build           Build all components for current platform"
 	@echo "  build.server    Build MCP server for current platform"
 	@echo "  build.cli       Build dailyctl CLI for current platform"
-	@echo "  build.ci        Build for all platforms/architectures (CI-style via GoReleaser)"
 	@echo "  clean           Clean build artifacts"
 	@echo ""
 	@echo "Development:"
@@ -60,6 +59,16 @@ help:
 	@echo ""
 	@echo "Information:"
 	@echo "  info.status     Show project status"
+	@echo ""
+	@echo "CI & Testing:"
+	@echo "  ci              Run full local CI pipeline (emulates GitHub Actions)"
+	@echo "  ci.build        Build for all platforms/architectures (GoReleaser)"
+	@echo "  ci.setup        Set up CI testing container (Ubuntu 24.04 + Go 1.24)"
+	@echo "  ci.test         Run tests in CI container (emulate CI test job)"
+	@echo "  ci.lint         Run linting in CI container (emulate CI lint job)"
+	@echo "  ci.full         Run full CI pipeline in container (test + lint + build + security)"
+	@echo "  ci.shell        Open interactive shell in CI container for debugging"
+	@echo "  ci.clean        Clean up CI test container and image"
 
 # Get version from git tag for build ldflags
 VERSION := $(shell git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
@@ -104,16 +113,6 @@ build.cli:
 	@cd cmd/dailyctl && go build $(LDFLAGS) -o ../../build/bin/dailyctl .
 	@echo "[SUCCESS] dailyctl CLI built: build/bin/dailyctl"
 
-# Build all architectures (CI-style via GoReleaser)
-build.ci:
-	@echo "[BUILD] Building for all architectures..."
-	@if command -v goreleaser >/dev/null 2>&1; then \
-		goreleaser build --snapshot --clean; \
-	else \
-		echo "[ERROR] GoReleaser not installed. Install with: go install github.com/goreleaser/goreleaser@latest"; \
-		exit 1; \
-	fi
-	@echo "[SUCCESS] Multi-architecture builds completed"
 
 # Development iteration cycle
 dev.iterate: build install
@@ -536,3 +535,52 @@ demo.clean:
 	@echo "[CLEAN] Removing demo recordings..."
 	@rm -f docs/dailylog-demo.cast* docs/dailylog-demo.svg
 	@echo "[SUCCESS] Demo recordings cleaned"
+
+# =============================================================================
+# CI & Testing
+# =============================================================================
+
+# Main CI target - run full local CI pipeline (container-based emulation)
+ci: ci.full
+	@echo "[CI] Local CI pipeline completed successfully! 🎉"
+
+# Build for all platforms/architectures using GoReleaser
+ci.build:
+	@echo "[CI] Building for all architectures with GoReleaser..."
+	@if command -v goreleaser >/dev/null 2>&1; then \
+		goreleaser build --snapshot --clean; \
+	else \
+		echo "[ERROR] GoReleaser not installed. Install with: go install github.com/goreleaser/goreleaser@latest"; \
+		exit 1; \
+	fi
+	@echo "[SUCCESS] Multi-architecture builds completed"
+
+# Set up the CI testing environment (build container)
+ci.setup:
+	@echo "[CI] Setting up local CI testing container..."
+	@./hack/test-ci-local.sh build
+
+# Run tests in CI container (emulating GitHub Actions test job)
+ci.test:
+	@echo "[CI] Running tests in container..."
+	@./hack/test-ci-local.sh run test
+
+# Run linting in CI container (emulating GitHub Actions lint job)
+ci.lint:
+	@echo "[CI] Running linting in container..."
+	@./hack/test-ci-local.sh run lint
+
+# Run full CI pipeline in container (all GitHub Actions jobs)
+ci.full:
+	@echo "[CI] Running full CI pipeline in container..."
+	@./hack/test-ci-local.sh run full
+
+# Open interactive shell in CI container for debugging
+ci.shell:
+	@echo "[CI] Opening shell in CI container for debugging..."
+	@./hack/test-ci-local.sh shell
+
+# Clean up CI testing environment
+ci.clean:
+	@echo "[CI] Cleaning up CI testing environment..."
+	@./hack/test-ci-local.sh clean
