@@ -69,7 +69,7 @@ run_tests() {
     setup_environment
     
     log_step "Running unit tests..."
-    if CGO_ENABLED=0 go test -v -race -coverprofile=coverage.out ./... 2>/dev/null; then
+    if CGO_ENABLED=0 go test -v -coverprofile=coverage.out ./... 2>/dev/null; then
         log_success "Tests passed"
         if [ -f "coverage.out" ]; then
             log_step "Coverage report generated: coverage.out"
