@@ -8,7 +8,6 @@ coverage.html
 .DS_Store
 
 # Go
-go.sum
 
 # IDE
 .vscode/
