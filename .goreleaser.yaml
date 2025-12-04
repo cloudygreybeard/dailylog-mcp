@@ -158,41 +158,6 @@ dockers:
       - "--label=org.opencontainers.image.source={{.GitURL}}"
       - "--platform=linux/amd64"
 
-# Announce (optional)
-announces:
-  - provider: "github"
-    title: "DailyLog v{{ .Tag }} is out!"
-    body: |
-      ## What's new
-      
-      {{ range .CommitGroups -}}
-      ### {{ .Title }}
-      {{ range .Commits }}
-      - {{ .Message }}
-      {{- end }}
-      {{ end -}}
-      
-      ## Download
-      
-      You can download this release from the [releases page]({{ .ReleaseURL }}).
-      
-      ## Installation
-      
-      ### Homebrew (macOS/Linux)
-      ```bash
-      brew install cloudygreybeard/tap/dailylog
-      ```
-      
-      ### Manual Installation
-      Download the appropriate archive for your platform from the releases page and extract the binaries.
-      
-      ### Configuration
-      Set up your GitHub repository and token:
-      ```bash
-      export DAILYLOG_GITHUB_REPO="cloudygreybeard/daily-logs"
-      export DAILYLOG_GITHUB_TOKEN="your_token_here"
-      ```
-
 # Validation
 project_name: dailylog-mcp
 

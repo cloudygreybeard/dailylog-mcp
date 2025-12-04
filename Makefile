@@ -1,7 +1,7 @@
 # DailyLog MCP - Development Automation
 # Model Context Protocol server for daily activity logging
 
-.PHONY: help setup build test clean install uninstall dev.iterate dev.clean-iterate info.status version.sync version.validate version.bump-patch version.bump-minor version.bump-major config.cursor config.vscode config.show setup.env setup.github-repo setup.complete validate.config validate.github build.cli install.cli ci ci.build ci.setup ci.test ci.lint ci.full ci.shell ci.clean
+.PHONY: help setup build test clean install uninstall dev.iterate dev.clean-iterate info.status version.sync version.validate version.bump-patch version.bump-minor version.bump-major config.cursor config.vscode config.show setup.env setup.github-repo setup.complete validate.config validate.github build.cli install.cli ci ci.build ci.setup ci.test ci.lint ci.full ci.shell ci.clean demo.record demo.render demo.clean
 
 # Default target
 help:
@@ -59,6 +59,11 @@ help:
 	@echo ""
 	@echo "Information:"
 	@echo "  info.status     Show project status"
+	@echo ""
+	@echo "Demo:"
+	@echo "  demo.record     Record new demo (asciinema + svg-term)"
+	@echo "  demo.render     Render existing .cast file to SVG"
+	@echo "  demo.clean      Remove demo recordings"
 	@echo ""
 	@echo "CI & Testing:"
 	@echo "  ci              Run full local CI pipeline (emulates GitHub Actions)"
@@ -527,9 +532,39 @@ version.bump-minor:
 
 version.bump-major:
 	@./hack/version bump major
+# Demo recording and rendering
 demo.record:
-	@echo "[DEMO] Recording DailyLog MCP demo with svg-term-cli..."
+	@echo "[DEMO] Recording DailyLog MCP demo..."
+	@echo "[INFO] This will:"
+	@echo "  1. Record terminal session with asciinema (creates .cast file)"
+	@echo "  2. Convert .cast to animated SVG with svg-term-cli"
+	@echo ""
+	@echo "[INFO] Requirements:"
+	@echo "  - asciinema: brew install asciinema"
+	@echo "  - svg-term-cli: npm install -g svg-term-cli"
+	@echo ""
 	@./hack/record-demo.sh
+
+demo.render:
+	@echo "[DEMO] Rendering existing .cast file to SVG..."
+	@if [ ! -f docs/dailylog-demo.cast ]; then \
+		echo "[ERROR] Cast file not found: docs/dailylog-demo.cast"; \
+		echo "[INFO] Run 'make demo.record' to create a new recording"; \
+		exit 1; \
+	fi
+	@if ! command -v svg-term >/dev/null 2>&1; then \
+		echo "[ERROR] svg-term-cli not found"; \
+		echo "[INFO] Install with: npm install -g svg-term-cli"; \
+		exit 1; \
+	fi
+	@echo "[RENDER] Converting docs/dailylog-demo.cast to docs/dailylog-demo.svg..."
+	@svg-term --out docs/dailylog-demo.svg --window < docs/dailylog-demo.cast
+	@if [ -f docs/dailylog-demo.svg ]; then \
+		echo "[SUCCESS] SVG created: docs/dailylog-demo.svg ($(shell du -h docs/dailylog-demo.svg | cut -f1))"; \
+	else \
+		echo "[ERROR] SVG file not created"; \
+		exit 1; \
+	fi
 
 demo.clean:
 	@echo "[CLEAN] Removing demo recordings..."
