@@ -56,6 +56,81 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
+    - name: Update Homebrew Formula
+      run: |
+        # Extract version from tag
+        VERSION=${GITHUB_REF#refs/tags/v}
+        
+        # Download the darwin_arm64 tarball to calculate SHA256
+        TARBALL_ARM64_URL="https://github.com/cloudygreybeard/dailylog-mcp/releases/download/v${VERSION}/dailylog-mcp_Darwin_arm64.tar.gz"
+        curl -L -o dailylog-arm64.tar.gz "$TARBALL_ARM64_URL"
+        SHA256_ARM64=$(shasum -a 256 dailylog-arm64.tar.gz | cut -d' ' -f1)
+        
+        # Download the darwin_amd64 tarball to calculate SHA256
+        TARBALL_AMD64_URL="https://github.com/cloudygreybeard/dailylog-mcp/releases/download/v${VERSION}/dailylog-mcp_Darwin_x86_64.tar.gz"
+        curl -L -o dailylog-amd64.tar.gz "$TARBALL_AMD64_URL"
+        SHA256_AMD64=$(shasum -a 256 dailylog-amd64.tar.gz | cut -d' ' -f1)
+        
+        # Setup SSH for deploy key authentication
+        mkdir -p ~/.ssh
+        echo "${{ secrets.HOMEBREW_DEPLOY_KEY }}" > ~/.ssh/id_ed25519
+        chmod 600 ~/.ssh/id_ed25519
+        ssh-keyscan github.com >> ~/.ssh/known_hosts
+        
+        # Clone the homebrew repository using SSH
+        git clone git@github.com:cloudygreybeard/homebrew-tap.git homebrew-repo
+        cd homebrew-repo
+        
+        # Create or update the formula
+        cat > Formula/dailylog.rb << 'EOF'
+        class Dailylog < Formula
+          desc "Daily activity logging with GitHub storage and MCP integration"
+          homepage "https://github.com/cloudygreybeard/dailylog-mcp"
+          version "VERSION_PLACEHOLDER"
+          license "Apache-2.0"
+        
+          if Hardware::CPU.arm?
+            url "https://github.com/cloudygreybeard/dailylog-mcp/releases/download/vVERSION_PLACEHOLDER/dailylog-mcp_Darwin_arm64.tar.gz"
+            sha256 "SHA256_ARM64_PLACEHOLDER"
+          else
+            url "https://github.com/cloudygreybeard/dailylog-mcp/releases/download/vVERSION_PLACEHOLDER/dailylog-mcp_Darwin_x86_64.tar.gz"
+            sha256 "SHA256_AMD64_PLACEHOLDER"
+          end
+        
+          def install
+            bin.install "dailylog"
+            bin.install "dailyctl"
+          end
+        
+          test do
+            system "#{bin}/dailylog", "--version"
+            system "#{bin}/dailyctl", "version"
+          end
+        end
+        EOF
+        
+        # Update placeholders in the formula
+        sed -i "s/VERSION_PLACEHOLDER/$VERSION/g" Formula/dailylog.rb
+        sed -i "s/SHA256_ARM64_PLACEHOLDER/$SHA256_ARM64/" Formula/dailylog.rb
+        sed -i "s/SHA256_AMD64_PLACEHOLDER/$SHA256_AMD64/" Formula/dailylog.rb
+        
+        # Commit and push the changes
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git add Formula/dailylog.rb
+        git commit -m "Update dailylog to v$VERSION
+        
+        - Update to version $VERSION
+        - Update SHA256 hashes for darwin_arm64 and darwin_x86_64
+        - Automated release from GoReleaser"
+        
+        # Push using SSH (deploy key authentication)
+        git push origin main
+        
+        echo "Updated Homebrew formula for version $VERSION"
+        echo "ARM64 SHA256: ${SHA256_ARM64}"
+        echo "AMD64 SHA256: ${SHA256_AMD64}"
+        
     - name: Upload release assets
       uses: actions/upload-artifact@v4
       with:

@@ -109,24 +109,10 @@ release:
   prerelease: auto
   mode: replace
 
-# Homebrew tap (optional)
-brews:
-  - name: dailylog
-    repository:
-      owner: cloudygreybeard
-      name: homebrew-tap
-    folder: Formula
-    homepage: https://github.com/cloudygreybeard/dailylog-mcp
-    description: "Daily activity logging with GitHub storage and MCP integration"
-    license: Apache-2.0
-    test: |
-      system "#{bin}/dailylog --version"
-      system "#{bin}/dailyctl version"
-    install: |
-      bin.install "dailylog"
-      bin.install "dailyctl"
+# Homebrew tap is updated manually in the release workflow
+# using SSH deploy key (HOMEBREW_DEPLOY_KEY secret)
 
-# Docker images (optional)
+# Docker images
 dockers:
   - image_templates:
       - "ghcr.io/cloudygreybeard/dailylog:latest"
