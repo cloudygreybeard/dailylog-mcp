@@ -51,13 +51,7 @@ builds:
 
 archives:
   - id: default
-    name_template: >-
-      {{ .ProjectName }}_
-      {{- title .Os }}_
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "386" }}i386
-      {{- else }}{{ .Arch }}{{ end }}
-      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     format: tar.gz
     format_overrides:
       - goos: windows
@@ -129,7 +123,7 @@ dockers:
       - "--platform=linux/amd64"
 
 # Validation
-project_name: dailylog-mcp
+project_name: dailylog
 
 # Git configuration
 git:

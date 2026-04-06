@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 permissions:
   contents: write
@@ -11,131 +11,41 @@ permissions:
 
 jobs:
   release:
-    name: Release
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: 1.24.x
-        
-    - name: Cache Go modules
-      uses: actions/cache@v4
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
-      continue-on-error: true
-          
-    - name: Download dependencies
-      run: go mod download
-      
-    - name: Run tests
-      run: go test -v ./...
-      
-    - name: Log in to GitHub Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-        
-    - name: Run GoReleaser
-      uses: goreleaser/goreleaser-action@v5
-      with:
-        distribution: goreleaser
-        version: latest
-        args: release --clean
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        
-    - name: Update Homebrew Formula
-      run: |
-        # Extract version from tag
-        VERSION=${GITHUB_REF#refs/tags/v}
-        
-        # Download the darwin_arm64 tarball to calculate SHA256
-        TARBALL_ARM64_URL="https://github.com/cloudygreybeard/dailylog-mcp/releases/download/v${VERSION}/dailylog-mcp_Darwin_arm64.tar.gz"
-        curl -L -o dailylog-arm64.tar.gz "$TARBALL_ARM64_URL"
-        SHA256_ARM64=$(shasum -a 256 dailylog-arm64.tar.gz | cut -d' ' -f1)
-        
-        # Download the darwin_amd64 tarball to calculate SHA256
-        TARBALL_AMD64_URL="https://github.com/cloudygreybeard/dailylog-mcp/releases/download/v${VERSION}/dailylog-mcp_Darwin_x86_64.tar.gz"
-        curl -L -o dailylog-amd64.tar.gz "$TARBALL_AMD64_URL"
-        SHA256_AMD64=$(shasum -a 256 dailylog-amd64.tar.gz | cut -d' ' -f1)
-        
-        # Setup SSH for deploy key authentication
-        mkdir -p ~/.ssh
-        echo "${{ secrets.HOMEBREW_DEPLOY_KEY }}" > ~/.ssh/id_ed25519
-        chmod 600 ~/.ssh/id_ed25519
-        ssh-keyscan github.com >> ~/.ssh/known_hosts
-        
-        # Clone the homebrew repository using SSH
-        git clone git@github.com:cloudygreybeard/homebrew-tap.git homebrew-repo
-        cd homebrew-repo
-        
-        # Create or update the formula
-        cat > Formula/dailylog.rb << 'EOF'
-        class Dailylog < Formula
-          desc "Daily activity logging with GitHub storage and MCP integration"
-          homepage "https://github.com/cloudygreybeard/dailylog-mcp"
-          version "VERSION_PLACEHOLDER"
-          license "Apache-2.0"
-        
-          if Hardware::CPU.arm?
-            url "https://github.com/cloudygreybeard/dailylog-mcp/releases/download/vVERSION_PLACEHOLDER/dailylog-mcp_Darwin_arm64.tar.gz"
-            sha256 "SHA256_ARM64_PLACEHOLDER"
-          else
-            url "https://github.com/cloudygreybeard/dailylog-mcp/releases/download/vVERSION_PLACEHOLDER/dailylog-mcp_Darwin_x86_64.tar.gz"
-            sha256 "SHA256_AMD64_PLACEHOLDER"
-          end
-        
-          def install
-            bin.install "dailylog"
-            bin.install "dailyctl"
-          end
-        
-          test do
-            system "#{bin}/dailylog", "--version"
-            system "#{bin}/dailyctl", "version"
-          end
-        end
-        EOF
-        
-        # Update placeholders in the formula
-        sed -i "s/VERSION_PLACEHOLDER/$VERSION/g" Formula/dailylog.rb
-        sed -i "s/SHA256_ARM64_PLACEHOLDER/$SHA256_ARM64/" Formula/dailylog.rb
-        sed -i "s/SHA256_AMD64_PLACEHOLDER/$SHA256_AMD64/" Formula/dailylog.rb
-        
-        # Commit and push the changes
-        git config user.name "GitHub Actions"
-        git config user.email "actions@github.com"
-        git add Formula/dailylog.rb
-        git commit -m "Update dailylog to v$VERSION
-        
-        - Update to version $VERSION
-        - Update SHA256 hashes for darwin_arm64 and darwin_x86_64
-        - Automated release from GoReleaser"
-        
-        # Push using SSH (deploy key authentication)
-        git push origin main
-        
-        echo "Updated Homebrew formula for version $VERSION"
-        echo "ARM64 SHA256: ${SHA256_ARM64}"
-        echo "AMD64 SHA256: ${SHA256_AMD64}"
-        
-    - name: Upload release assets
-      uses: actions/upload-artifact@v4
-      with:
-        name: release-assets
-        path: dist/
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
 
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update-tap:
+    needs: release
+    uses: cloudygreybeard/homebrew-tap/.github/workflows/release-homebrew-formula.yml@main
+    with:
+      package-name: dailylog
+      binary-name: dailylog
+      formula-class: Dailylog
+      formula-desc: "Daily activity logging with GitHub storage and MCP integration"
+      artifact-style: goreleaser
+      private: false
+      install-extra: 'bin.install "dailyctl"'
+      custom-test: |-
+        system "#{bin}/dailylog", "--version"
+              system "#{bin}/dailyctl", "version"
+    secrets:
+      deploy-key: ${{ secrets.HOMEBREW_TAP_DEPLOY_KEY }}
